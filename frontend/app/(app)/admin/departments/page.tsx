@@ -208,7 +208,6 @@ export default function DepartmentsPage() {
             </tbody>
           </table>
         </div>
-      </div>
     </div>
   )
 }
