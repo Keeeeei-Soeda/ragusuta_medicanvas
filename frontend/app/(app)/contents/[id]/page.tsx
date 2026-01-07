@@ -3,6 +3,7 @@
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { contentsApi } from '@/lib/api'
 import { useParams, useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 
 export default function ContentDetailPage() {
   const params = useParams()
