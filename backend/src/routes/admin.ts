@@ -501,6 +501,206 @@ router.delete('/announcements/:id', requireRole(['ADMIN', 'RAGUSTA', 'SYSTEM']),
 });
 
 /**
+ * GET /api/admin/experiences
+ * 体験談一覧を取得（管理者向け）
+ */
+router.get('/experiences', requireRole(['ADMIN', 'RAGUSTA', 'SYSTEM']), async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { companyId, role } = req.user;
+    const { search, category, status, limit = '50', offset = '0' } = req.query;
+
+    const where: any = {
+      ...(role !== 'SYSTEM' && role !== 'RAGUSTA' && { user: { companyId } }),
+    };
+
+    if (category && typeof category === 'string') {
+      where.category = category;
+    }
+
+    if (status && typeof status === 'string') {
+      where.status = status;
+    }
+
+    if (search && typeof search === 'string') {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { content: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [experiences, total] = await Promise.all([
+      prisma.experience.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              birthDate: true,
+              gender: true,
+              jobType: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: parseInt(limit as string),
+        skip: parseInt(offset as string),
+      }),
+      prisma.experience.count({ where }),
+    ]);
+
+    // 年齢計算
+    const experiencesWithAge = experiences.map((exp) => ({
+      ...exp,
+      user: {
+        ...exp.user,
+        age: calculateAge(exp.user.birthDate),
+      },
+    }));
+
+    res.json({
+      experiences: experiencesWithAge,
+      total,
+      limit: parseInt(limit as string),
+      offset: parseInt(offset as string),
+    });
+  } catch (error) {
+    console.error('Get admin experiences error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * PUT /api/admin/experiences/:id/status
+ * 体験談のステータスを更新
+ */
+router.put('/experiences/:id/status', requireRole(['ADMIN', 'RAGUSTA', 'SYSTEM']), async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status || !['PUBLISHED', 'DRAFT', 'ARCHIVED'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    const experience = await prisma.experience.update({
+      where: { id },
+      data: { status },
+    });
+
+    res.json(experience);
+  } catch (error) {
+    console.error('Update experience status error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * DELETE /api/admin/experiences/:id
+ * 体験談を削除
+ */
+router.delete('/experiences/:id', requireRole(['ADMIN', 'RAGUSTA', 'SYSTEM']), async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { id } = req.params;
+
+    await prisma.experience.delete({
+      where: { id },
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete experience error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/admin/experiences/export
+ * 体験談をJSON形式でエクスポート
+ */
+router.get('/experiences/export', requireRole(['ADMIN', 'RAGUSTA', 'SYSTEM']), async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { companyId, role } = req.user;
+
+    const where: any = {
+      ...(role !== 'SYSTEM' && role !== 'RAGUSTA' && { user: { companyId } }),
+    };
+
+    const experiences = await prisma.experience.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            birthDate: true,
+            gender: true,
+            jobType: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // JSON形式に変換
+    const exportData = {
+      experiences: experiences.map((exp) => ({
+        id: exp.id,
+        age: calculateAge(exp.user.birthDate),
+        gender: exp.user.gender,
+        jobType: exp.user.jobType,
+        category: exp.category,
+        subcategory: exp.subcategory,
+        targetPerson: exp.targetPerson,
+        title: exp.title,
+        content: exp.content,
+        tags: exp.tags,
+        viewCount: exp.viewCount,
+        helpfulCount: exp.helpfulCount,
+        createdAt: exp.createdAt.toISOString(),
+      })),
+      exportedAt: new Date().toISOString(),
+      total: experiences.length,
+    };
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="experiences_export_${new Date().toISOString().split('T')[0]}.json"`);
+    res.json(exportData);
+  } catch (error) {
+    console.error('Export experiences error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * 年齢計算ヘルパー関数
+ */
+function calculateAge(birthDate: Date): number {
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+}
+
+/**
  * POST /api/admin/health-contents
  * 健康コンテンツを作成（ラグスタ向け）
  */

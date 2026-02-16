@@ -73,14 +73,30 @@ export default function Sidebar() {
       <div className="flex h-16 items-center border-b border-gray-200 px-6">
         <div className="flex items-center">
           <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500" />
-          <span className="ml-3 text-xl font-bold text-gray-900">HealthConnect</span>
+          <span className="ml-3 text-xl font-bold text-gray-900">へるこね</span>
         </div>
       </div>
 
       {/* ナビゲーションメニュー */}
       <nav className="flex-1 space-y-1 px-3 py-4">
         {menuItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+          // 完全一致を優先し、より具体的なパス（長いパス）を優先する
+          // 例: /experiences/new の場合は /experiences をアクティブにしない
+          let isActive = false;
+          if (pathname === item.href) {
+            // 完全一致
+            isActive = true;
+          } else if (pathname.startsWith(item.href + '/')) {
+            // より具体的なパスが存在するかチェック
+            // 他のメニュー項目で、このパスより長いパスがマッチする場合は無効
+            const hasMoreSpecificMatch = menuItems.some(
+              (otherItem) =>
+                otherItem.href !== item.href &&
+                otherItem.href.startsWith(item.href + '/') &&
+                pathname.startsWith(otherItem.href)
+            );
+            isActive = !hasMoreSpecificMatch;
+          }
           const Icon = item.icon;
 
           return (
@@ -89,10 +105,9 @@ export default function Sidebar() {
               href={item.href}
               className={`
                 group flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors
-                ${
-                  isActive
-                    ? 'bg-purple-50 text-purple-700'
-                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                ${isActive
+                  ? 'bg-purple-50 text-purple-700'
+                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                 }
               `}
             >

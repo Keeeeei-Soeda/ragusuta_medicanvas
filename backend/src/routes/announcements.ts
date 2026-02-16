@@ -86,3 +86,8 @@ router.post('/:id/read', authenticateToken, async (req: AuthRequest, res: Respon
 
 export default router;
 
+
+
+
+
+

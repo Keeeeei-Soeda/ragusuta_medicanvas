@@ -49,7 +49,7 @@ export default function HomePage() {
     <div>
       {/* ウェルカムメッセージ */}
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">HealthConnect へようこそ</h2>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">へるこね へようこそ</h2>
         <p className="text-gray-600">健康に関する体験を共有し、つながりましょう</p>
       </div>
 
@@ -157,14 +157,13 @@ export default function HomePage() {
                 className="block bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-start gap-3">
-                  <span className={`px-2 py-1 text-xs rounded-full flex-shrink-0 ${
-                    announcement.type === 'URGENT' ? 'bg-red-100 text-red-800' :
-                    announcement.type === 'WARNING' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-blue-100 text-blue-800'
-                  }`}>
+                  <span className={`px-2 py-1 text-xs rounded-full flex-shrink-0 ${announcement.type === 'URGENT' ? 'bg-red-100 text-red-800' :
+                      announcement.type === 'WARNING' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-blue-100 text-blue-800'
+                    }`}>
                     {announcement.type === 'URGENT' ? '🔴' :
-                     announcement.type === 'WARNING' ? '⚠️' :
-                     'ℹ️'}
+                      announcement.type === 'WARNING' ? '⚠️' :
+                        'ℹ️'}
                   </span>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-bold text-gray-900 mb-1 line-clamp-1">{announcement.title}</h4>
@@ -201,11 +200,10 @@ export default function HomePage() {
                 </div>
               )}
               <div className="p-4">
-                <span className={`text-xs px-2 py-1 rounded-full ${
-                  content.type === 'VIDEO' ? 'bg-red-100 text-red-800' :
-                  content.type === 'ARTICLE' ? 'bg-blue-100 text-blue-800' :
-                  'bg-green-100 text-green-800'
-                }`}>
+                <span className={`text-xs px-2 py-1 rounded-full ${content.type === 'VIDEO' ? 'bg-red-100 text-red-800' :
+                    content.type === 'ARTICLE' ? 'bg-blue-100 text-blue-800' :
+                      'bg-green-100 text-green-800'
+                  }`}>
                   {content.type === 'VIDEO' ? '🎥' : content.type === 'ARTICLE' ? '📄' : '📁'} {content.type}
                 </span>
                 <h4 className="font-bold text-gray-900 mt-2 mb-1 line-clamp-2">{content.title}</h4>

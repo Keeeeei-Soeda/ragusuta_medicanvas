@@ -12,9 +12,12 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:experiences": "tsx prisma/seed-experiences.ts",
+    "db:seed:experiences:json": "tsx prisma/seed-experiences-from-json.ts",
+    "db:seed:experiences:extra": "tsx prisma/seed-experiences-extra.ts",
     "db:seed:activities": "tsx prisma/seed-activities.ts",
     "db:seed:contents": "tsx prisma/seed-contents.ts",
     "db:seed:all": "tsx prisma/seed.ts && tsx prisma/seed-experiences.ts && tsx prisma/seed-activities.ts && tsx prisma/seed-contents.ts",
+    "db:seed:all:json": "tsx prisma/seed.ts && tsx prisma/seed-experiences-from-json.ts && tsx prisma/seed-activities.ts && tsx prisma/seed-contents.ts",
     "test": "jest"
   },
   "dependencies": {

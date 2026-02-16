@@ -6,7 +6,7 @@ import { Providers } from './providers'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'HealthConnect - 法人向け健康プラットフォーム',
+  title: 'へるこね - 法人向け健康プラットフォーム',
   description: '従業員が患者体験談を閲覧・投稿できるプラットフォーム',
 }
 
@@ -23,4 +23,9 @@ export default function RootLayout({
     </html>
   )
 }
+
+
+
+
+
 

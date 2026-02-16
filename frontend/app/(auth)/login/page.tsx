@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { authApi } from '@/lib/api'
 
@@ -14,6 +14,11 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  // ログインをスキップしてホームにリダイレクト
+  useEffect(() => {
+    router.push('/home')
+  }, [router])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -21,7 +26,7 @@ export default function LoginPage() {
 
     try {
       const response = await authApi.login(formData)
-      
+
       if (response.isFirstLogin) {
         // 初回ログインの場合、プロフィール登録画面へ
         router.push('/register-profile')
@@ -41,7 +46,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-md">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            HealthConnect
+            へるこね
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             法人向け健康プラットフォーム
@@ -121,4 +126,7 @@ export default function LoginPage() {
     </div>
   )
 }
+
+
+
 

@@ -1,0 +1,30 @@
+# へるこねサーバー SSH設定テンプレート
+# このファイルを ~/.ssh/config に追加してください
+
+# へるこねサーバー（IPアドレス直接指定）
+Host pharmacy-platform
+    HostName 162.43.8.168
+    User root
+    IdentityFile ~/.ssh/id_ed25519
+    IdentitiesOnly yes
+    StrictHostKeyChecking no
+    UserKnownHostsFile ~/.ssh/known_hosts
+
+# へるこねサーバー（ホスト名指定）
+Host pharmacy-platform-hostname
+    HostName x162-43-8-168.static.xvps.ne.jp
+    User root
+    IdentityFile ~/.ssh/id_ed25519
+    IdentitiesOnly yes
+    StrictHostKeyChecking no
+    UserKnownHostsFile ~/.ssh/known_hosts
+
+# 短縮エイリアス
+Host 162
+    HostName 162.43.8.168
+    User root
+    IdentityFile ~/.ssh/id_ed25519
+    IdentitiesOnly yes
+    StrictHostKeyChecking no
+    UserKnownHostsFile ~/.ssh/known_hosts
+

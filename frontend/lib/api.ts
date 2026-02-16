@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
 
 // Axiosインスタンスを作成
 export const api = axios.create({
@@ -12,19 +12,18 @@ export const api = axios.create({
 
 // リクエストインターセプター: トークンを自動付与
 api.interceptors.request.use((config) => {
-  // 開発モード: 認証をスキップ
-  if (process.env.NODE_ENV === 'development') {
-    config.headers['x-dev-user-id'] = 'dev-user-id';
-    config.headers['x-dev-company-id'] = 'dev-company-id';
-    config.headers['x-dev-role'] = 'EMPLOYEE';
-    return config;
-  }
-  
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  // 常に認証をスキップ（開発ヘッダーを送信）
+  // データベースから最初のユーザーIDを取得するため、一時的に固定値を使用
+  config.headers['x-dev-user-id'] = 'dev-user-id';
+  config.headers['x-dev-company-id'] = 'dev-company-id';
+  config.headers['x-dev-role'] = 'EMPLOYEE';
   return config;
+  
+  // 以下はコメントアウト（必要に応じて有効化）
+  // const token = localStorage.getItem('token');
+  // if (token) {
+  //   config.headers.Authorization = `Bearer ${token}`;
+  // }
 });
 
 // レスポンスインターセプター: エラーハンドリング
@@ -79,7 +78,7 @@ export const authApi = {
 };
 
 export const experienceApi = {
-  getAll: async (params?: { category?: string; search?: string; limit?: number; offset?: number }) => {
+  getAll: async (params?: { category?: string; search?: string; age?: number; gender?: string; limit?: number; offset?: number }) => {
     return api.get('/experiences', { params });
   },
   getMatched: async () => {
@@ -139,6 +138,19 @@ export const adminApi = {
   },
   updateUser: async (id: string, data: { isActive?: boolean; role?: string; departmentId?: string }) => {
     return api.put(`/admin/users/${id}`, data);
+  },
+  // 体験談管理
+  getExperiences: async (params?: { search?: string; category?: string; status?: string; limit?: number; offset?: number }) => {
+    return api.get('/admin/experiences', { params });
+  },
+  updateExperienceStatus: async (id: string, status: string) => {
+    return api.put(`/admin/experiences/${id}/status`, { status });
+  },
+  deleteExperience: async (id: string) => {
+    return api.delete(`/admin/experiences/${id}`);
+  },
+  exportExperiences: async () => {
+    return api.get('/admin/experiences/export');
   },
   // お知らせ管理
   getAnnouncements: async (companyId?: string) => {

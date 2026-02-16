@@ -3,15 +3,35 @@
 import { useQuery } from '@tanstack/react-query'
 import { experienceApi } from '@/lib/api'
 import Link from 'next/link'
+import { useState } from 'react'
 
 export default function ExperiencesPage() {
+  const [category, setCategory] = useState('')
+  const [age, setAge] = useState('')
+  const [gender, setGender] = useState('')
+  const [search, setSearch] = useState('')
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ['experiences'],
+    queryKey: ['experiences', category, age, gender, search],
     queryFn: async () => {
-      const response = await experienceApi.getAll()
+      const params: any = {}
+      if (category) params.category = category
+      if (age) params.age = parseInt(age)
+      if (gender) params.gender = gender
+      if (search) params.search = search
+      params.limit = 100 // 検索結果を多く表示
+      
+      const response = await experienceApi.getAll(params)
       return response.data
     },
   })
+
+  const handleReset = () => {
+    setCategory('')
+    setAge('')
+    setGender('')
+    setSearch('')
+  }
 
   if (isLoading) {
     return (
@@ -39,6 +59,87 @@ export default function ExperiencesPage() {
         <p className="text-gray-600">
           全 {data?.total || 0} 件の体験談
         </p>
+      </div>
+
+      {/* 検索フォーム */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+        <h3 className="text-lg font-bold text-gray-900 mb-4">🔍 検索・フィルター</h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* キーワード検索 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              キーワード
+            </label>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="タイトル・本文で検索"
+              className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+
+          {/* カテゴリ（病気の種類） */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              病気の種類
+            </label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none bg-white"
+            >
+              <option value="">すべて</option>
+              <option value="PHYSICAL">身体的な症状</option>
+              <option value="MENTAL">メンタルヘルス</option>
+              <option value="FAMILY">家族・子供</option>
+              <option value="LIFESTYLE">生活習慣</option>
+            </select>
+          </div>
+
+          {/* 年齢 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              年齢（±5歳の範囲）
+            </label>
+            <input
+              type="number"
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+              placeholder="例: 35"
+              min="1"
+              max="150"
+              className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+
+          {/* 性別 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              性別
+            </label>
+            <select
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+              className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none bg-white"
+            >
+              <option value="">すべて</option>
+              <option value="MALE">男性</option>
+              <option value="FEMALE">女性</option>
+              <option value="OTHER">その他</option>
+            </select>
+          </div>
+        </div>
+
+        {/* リセットボタン */}
+        <div className="mt-4 flex justify-end">
+          <button
+            onClick={handleReset}
+            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            リセット
+          </button>
+        </div>
       </div>
 
       {/* 体験談カード */}
@@ -101,4 +202,6 @@ export default function ExperiencesPage() {
     </div>
   )
 }
+
+
 

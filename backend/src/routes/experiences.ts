@@ -22,7 +22,7 @@ const createExperienceSchema = z.object({
  */
 router.get('/', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const { category, search, limit = '20', offset = '0' } = req.query;
+    const { category, search, age, gender, limit = '20', offset = '0' } = req.query;
 
     const where: any = {
       status: 'PUBLISHED',
@@ -40,6 +40,34 @@ router.get('/', authenticateToken, async (req: AuthRequest, res: Response) => {
         { title: { contains: search, mode: 'insensitive' } },
         { content: { contains: search, mode: 'insensitive' } },
       ];
+    }
+
+    // 性別フィルター
+    if (gender && typeof gender === 'string' && (gender === 'MALE' || gender === 'FEMALE' || gender === 'OTHER')) {
+      where.user = {
+        ...where.user,
+        gender: gender,
+      };
+    }
+
+    // 年齢フィルター（±5歳の範囲）
+    if (age && typeof age === 'string') {
+      const targetAge = parseInt(age);
+      if (!isNaN(targetAge) && targetAge > 0 && targetAge < 150) {
+        const today = new Date();
+        // 年齢が targetAge+5 になる人の生年月日（最も若い = より最近の生年月日）
+        const maxBirthDate = new Date(today.getFullYear() - (targetAge + 5), 0, 1);
+        // 年齢が targetAge-5 になる人の生年月日（最も年上 = より過去の生年月日）
+        const minBirthDate = new Date(today.getFullYear() - (targetAge - 5) + 1, 11, 31);
+        
+        where.user = {
+          ...where.user,
+          birthDate: {
+            gte: maxBirthDate,  // より最近（若い）以上
+            lte: minBirthDate,  // より過去（年上）以下
+          },
+        };
+      }
     }
 
     const [experiences, total] = await Promise.all([

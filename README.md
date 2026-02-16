@@ -102,9 +102,11 @@ lagsta_medicanvas/
 - [要件定義書](./要件定義書_HealthConnect_v2.0.md) - システム全体の要件定義
 - [QUICKSTART.md](./QUICKSTART.md) - クイックスタートガイド
 - [TESTING.md](./TESTING.md) - テスト手順
+- [docs/SSH_CONNECTION_GUIDE.md](./docs/SSH_CONNECTION_GUIDE.md) - **SSH接続ガイド（Cursor経由含む）**
 - [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) - 開発環境の詳細
 - [docs/PROGRESS.md](./docs/PROGRESS.md) - 開発進捗状況
 - [docs/USER_FEATURES_STATUS.md](./docs/USER_FEATURES_STATUS.md) - ユーザー向け機能の実装状況
+- [docs/EXPERIENCES_IMPORT.md](./docs/EXPERIENCES_IMPORT.md) - 体験談データのインポート方法
 
 ## 🔐 開発モード
 
@@ -144,7 +146,7 @@ lagsta_medicanvas/
 - **ユーザー**: 
   - 管理者: ADMIN001 / Admin123!
   - 従業員: EMP001 / User123!
-- **体験談**: 5件
+- **体験談**: 5件（基本）または70件（JSONインポート）
 - **健康コンテンツ**: 11件（動画4、記事4、PDF3）
 - **ActivityLog**: 各ユーザーに10-40件
 
@@ -161,7 +163,9 @@ lagsta_medicanvas/
 npm run dev          # 開発サーバー起動
 npm run build        # ビルド
 npm run db:migrate   # マイグレーション実行
-npm run db:seed:all  # シードデータ投入
+npm run db:seed:all  # シードデータ投入（基本5件）
+npm run db:seed:all:json  # シードデータ投入（JSONから70件）
+npm run db:seed:experiences:json  # JSONから体験談のみインポート
 npm run db:studio    # Prisma Studio起動
 ```
 

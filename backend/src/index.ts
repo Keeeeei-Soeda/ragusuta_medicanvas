@@ -23,22 +23,8 @@ export const prisma = new PrismaClient();
 // ミドルウェア
 app.use(cors({
   origin: (origin, callback) => {
-    // 開発環境ではlocalhost全体を許可
-    if (process.env.NODE_ENV === 'development') {
-      if (!origin || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    } else {
-      // 本番環境では設定されたURLのみ許可
-      const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:3000';
-      if (origin === allowedOrigin) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    }
+    // すべてのoriginを許可（一時的）
+    callback(null, true);
   },
   credentials: true
 }));
@@ -74,8 +60,8 @@ app.use((req, res) => {
 });
 
 // サーバー起動
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
 });
 
 // グレースフルシャットダウン

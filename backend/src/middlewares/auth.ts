@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { prisma } from '../index';
 
 export interface AuthRequest extends Request {
   user?: {
@@ -17,14 +18,39 @@ export function authenticateToken(
   res: Response,
   next: NextFunction
 ) {
-  // 開発モード: 認証をスキップ（x-dev-user-idヘッダーがある場合）
-  if (process.env.NODE_ENV === 'development' && req.headers['x-dev-user-id']) {
-    req.user = {
-      userId: req.headers['x-dev-user-id'] as string,
-      companyId: req.headers['x-dev-company-id'] as string || 'default-company-id',
-      role: req.headers['x-dev-role'] as string || 'EMPLOYEE',
-    };
-    return next();
+  // 認証をスキップ（x-dev-user-idヘッダーがある場合）
+  // 本番環境でも一時的に有効化
+  if (req.headers['x-dev-user-id']) {
+    // データベースから最初のユーザーを取得して設定
+    prisma.user.findFirst({
+      orderBy: { createdAt: 'asc' }
+    }).then(user => {
+      if (user) {
+        req.user = {
+          userId: user.id,
+          companyId: user.companyId,
+          role: user.role,
+        };
+      } else {
+        // ユーザーが見つからない場合、ヘッダーの値を使用
+        req.user = {
+          userId: req.headers['x-dev-user-id'] as string,
+          companyId: req.headers['x-dev-company-id'] as string || 'default-company-id',
+          role: req.headers['x-dev-role'] as string || 'EMPLOYEE',
+        };
+      }
+      next();
+    }).catch((err) => {
+      console.error('Error fetching user for dev auth:', err);
+      // エラー時もヘッダーの値を使用
+      req.user = {
+        userId: req.headers['x-dev-user-id'] as string,
+        companyId: req.headers['x-dev-company-id'] as string || 'default-company-id',
+        role: req.headers['x-dev-role'] as string || 'EMPLOYEE',
+      };
+      next();
+    });
+    return;
   }
 
   const authHeader = req.headers['authorization'];

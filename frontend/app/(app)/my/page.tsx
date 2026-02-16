@@ -1,12 +1,14 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { authApi, experienceApi, statsApi } from '@/lib/api'
 import Link from 'next/link'
 import { useState } from 'react'
 
 export default function MyPage() {
   const [activeTab, setActiveTab] = useState<'profile' | 'experiences' | 'stats' | 'settings'>('profile')
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const queryClient = useQueryClient()
 
   // ユーザー情報取得
   const { data: user } = useQuery({
@@ -14,6 +16,20 @@ export default function MyPage() {
     queryFn: async () => {
       const response = await authApi.getMe()
       return response.data
+    },
+  })
+
+  // プロフィール更新
+  const updateProfileMutation = useMutation({
+    mutationFn: (data: {
+      hasChildren: boolean
+      childrenAges?: number[]
+      isMarried: boolean
+      interestedCategories?: string[]
+    }) => authApi.registerProfile(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', 'me'] })
+      setIsEditModalOpen(false)
     },
   })
 
@@ -62,10 +78,9 @@ export default function MyPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`
                 py-4 px-1 border-b-2 font-medium text-sm transition-colors
-                ${
-                  activeTab === tab.id
-                    ? 'border-purple-500 text-purple-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ${activeTab === tab.id
+                  ? 'border-purple-500 text-purple-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }
               `}
             >
@@ -82,7 +97,7 @@ export default function MyPage() {
         {activeTab === 'profile' && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
             <h3 className="text-xl font-bold text-gray-900 mb-6">プロフィール情報</h3>
-            
+
             {user ? (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -90,7 +105,7 @@ export default function MyPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">氏名</label>
                     <p className="text-gray-900">{user.name}</p>
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">社員番号</label>
                     <p className="text-gray-900">{user.employeeNumber}</p>
@@ -163,7 +178,10 @@ export default function MyPage() {
                 )}
 
                 <div className="border-t border-gray-200 pt-6 mt-6">
-                  <button className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700">
+                  <button
+                    onClick={() => setIsEditModalOpen(true)}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                  >
                     プロフィールを編集
                   </button>
                 </div>
@@ -232,7 +250,7 @@ export default function MyPage() {
         {activeTab === 'stats' && (
           <div>
             <h3 className="text-xl font-bold text-gray-900 mb-6">個人統計</h3>
-            
+
             {personalStats ? (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -282,7 +300,7 @@ export default function MyPage() {
         {activeTab === 'settings' && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
             <h3 className="text-xl font-bold text-gray-900 mb-6">設定</h3>
-            
+
             <div className="space-y-6">
               <div>
                 <h4 className="text-lg font-bold text-gray-900 mb-4">通知設定</h4>
@@ -325,7 +343,295 @@ export default function MyPage() {
           </div>
         )}
       </div>
+
+      {/* プロフィール編集モーダル */}
+      {isEditModalOpen && (
+        <ProfileEditModal
+          user={user}
+          onClose={() => setIsEditModalOpen(false)}
+          onSave={(data) => updateProfileMutation.mutate(data)}
+          isLoading={updateProfileMutation.isPending}
+        />
+      )}
     </div>
   )
 }
+
+// プロフィール編集モーダルコンポーネント
+function ProfileEditModal({
+  user,
+  onClose,
+  onSave,
+  isLoading,
+}: {
+  user: any
+  onClose: () => void
+  onSave: (data: {
+    hasChildren: boolean
+    childrenAges?: number[]
+    isMarried: boolean
+    interestedCategories?: string[]
+  }) => void
+  isLoading: boolean
+}) {
+  const [formData, setFormData] = useState({
+    hasChildren: user?.profile?.hasChildren || false,
+    childrenAges: user?.profile?.childrenAges || [] as number[],
+    isMarried: user?.profile?.isMarried || false,
+    interestedCategories: user?.profile?.interestedCategories || [] as string[],
+  })
+
+  const [newChildAge, setNewChildAge] = useState('')
+  const [newCategory, setNewCategory] = useState('')
+
+  const categoryOptions = [
+    { value: 'PHYSICAL', label: '身体' },
+    { value: 'MENTAL', label: '心・精神' },
+    { value: 'FAMILY', label: '家族' },
+    { value: 'LIFESTYLE', label: '生活習慣' },
+    { value: 'SENIOR', label: '高齢者' },
+  ]
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    onSave({
+      hasChildren: formData.hasChildren,
+      childrenAges: formData.childrenAges.length > 0 ? formData.childrenAges : undefined,
+      isMarried: formData.isMarried,
+      interestedCategories: formData.interestedCategories.length > 0 ? formData.interestedCategories : undefined,
+    })
+  }
+
+  const addChildAge = () => {
+    const age = parseInt(newChildAge)
+    if (!isNaN(age) && age >= 0 && age <= 30) {
+      setFormData({
+        ...formData,
+        childrenAges: [...formData.childrenAges, age],
+      })
+      setNewChildAge('')
+    }
+  }
+
+  const removeChildAge = (index: number) => {
+    setFormData({
+      ...formData,
+      childrenAges: formData.childrenAges.filter((_: number, i: number) => i !== index),
+    })
+  }
+
+  const addCategory = () => {
+    if (newCategory && !formData.interestedCategories.includes(newCategory)) {
+      setFormData({
+        ...formData,
+        interestedCategories: [...formData.interestedCategories, newCategory],
+      })
+      setNewCategory('')
+    }
+  }
+
+  const removeCategory = (category: string) => {
+    setFormData({
+      ...formData,
+      interestedCategories: formData.interestedCategories.filter((c: string) => c !== category),
+    })
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xl font-bold text-gray-900">プロフィールを編集</h3>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6">
+          {/* お子さん */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              お子さんはいますか？
+            </label>
+            <div className="flex gap-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="hasChildren"
+                  checked={formData.hasChildren === true}
+                  onChange={() => setFormData({ ...formData, hasChildren: true })}
+                  className="mr-2"
+                />
+                はい
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="hasChildren"
+                  checked={formData.hasChildren === false}
+                  onChange={() => setFormData({ ...formData, hasChildren: false, childrenAges: [] })}
+                  className="mr-2"
+                />
+                いいえ
+              </label>
+            </div>
+
+            {formData.hasChildren && (
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  お子さんの年齢
+                </label>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="number"
+                    min="0"
+                    max="30"
+                    value={newChildAge}
+                    onChange={(e) => setNewChildAge(e.target.value)}
+                    placeholder="年齢を入力"
+                    className="px-3 py-2 border border-gray-300 rounded-md w-32"
+                  />
+                  <button
+                    type="button"
+                    onClick={addChildAge}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+                  >
+                    追加
+                  </button>
+                </div>
+                {formData.childrenAges.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {formData.childrenAges.map((age: number, index: number) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm flex items-center gap-2"
+                      >
+                        {age}歳
+                        <button
+                          type="button"
+                          onClick={() => removeChildAge(index)}
+                          className="text-purple-600 hover:text-purple-800"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* 結婚状況 */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              結婚状況
+            </label>
+            <div className="flex gap-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="isMarried"
+                  checked={formData.isMarried === true}
+                  onChange={() => setFormData({ ...formData, isMarried: true })}
+                  className="mr-2"
+                />
+                既婚
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="isMarried"
+                  checked={formData.isMarried === false}
+                  onChange={() => setFormData({ ...formData, isMarried: false })}
+                  className="mr-2"
+                />
+                未婚
+              </label>
+            </div>
+          </div>
+
+          {/* 関心のあるカテゴリ */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              関心のあるカテゴリ
+            </label>
+            <div className="flex gap-2 mb-2">
+              <select
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md"
+              >
+                <option value="">カテゴリを選択</option>
+                {categoryOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={addCategory}
+                disabled={!newCategory}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                追加
+              </button>
+            </div>
+            {formData.interestedCategories.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {formData.interestedCategories.map((cat: string) => {
+                  const option = categoryOptions.find((opt) => opt.value === cat)
+                  return (
+                    <span
+                      key={cat}
+                      className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm flex items-center gap-2"
+                    >
+                      {option?.label || cat}
+                      <button
+                        type="button"
+                        onClick={() => removeCategory(cat)}
+                        className="text-purple-600 hover:text-purple-800"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* ボタン */}
+          <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+            >
+              キャンセル
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? '保存中...' : '保存'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+
+
+
+
 

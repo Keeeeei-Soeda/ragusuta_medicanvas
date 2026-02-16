@@ -46,6 +46,13 @@ export default function AdminPage() {
           <p className="text-sm text-gray-600">ユーザー一覧・権限管理</p>
         </Link>
         <Link
+          href="/admin/experiences"
+          className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
+        >
+          <h3 className="text-lg font-bold text-gray-900 mb-2">📝 体験談管理</h3>
+          <p className="text-sm text-gray-600">体験談の確認・管理・エクスポート</p>
+        </Link>
+        <Link
           href="/admin/announcements"
           className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
         >
